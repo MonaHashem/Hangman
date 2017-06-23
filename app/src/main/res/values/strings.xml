@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Hangman</string>
+    <string name="shared_preference">sharedPreference</string>
+    <string name="score">score</string>
 </resources>
