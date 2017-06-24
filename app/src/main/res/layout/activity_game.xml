@@ -23,9 +23,10 @@
     <GridLayout
         android:id="@+id/grid_string"
         android:paddingTop="50dp"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:rowCount="2"
+        android:layout_gravity="center"
         >
 
 
@@ -36,10 +37,11 @@
     <GridLayout
         android:id="@+id/grid_layout"
         android:paddingTop="50dp"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:rowCount="4"
         android:columnCount="7"
+        android:layout_gravity="center"
         >
 
     </GridLayout>

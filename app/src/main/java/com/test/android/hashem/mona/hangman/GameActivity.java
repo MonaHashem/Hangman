@@ -12,15 +12,21 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
+import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 
 public class GameActivity extends AppCompatActivity {
 
@@ -30,6 +36,7 @@ public class GameActivity extends AppCompatActivity {
     Button mButtons[] ,mPlayAgain;
     TextView mRemaining,mGameStatus, mLetters[];
     LinearLayout mEndGame;
+    RequestQueue requestQueue;
     int rem = 10;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +50,7 @@ public class GameActivity extends AppCompatActivity {
         mGameStatus = (TextView) findViewById(R.id.tv_game_status);
         mRemaining.setText(rem+"");
         mButtons = new Button [26];
+        requestQueue= Volley.newRequestQueue(this);
         mPlayAgain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -54,7 +62,7 @@ public class GameActivity extends AppCompatActivity {
     }
 
     protected void getWord(){
-        RequestQueue requestQueue= Volley.newRequestQueue(this);
+
         String url ="http://hangman-api.herokuapp.com/hangman";
 
         JSONObject jsonObject= new JSONObject();
@@ -87,9 +95,9 @@ public class GameActivity extends AppCompatActivity {
                 for(int i = 0; i < size; i++){
                     mLetters[i] = new TextView(GameActivity.this);
                     mLetters[i].setLayoutParams(new LinearLayout.LayoutParams(GridLayout.LayoutParams.WRAP_CONTENT, GridLayout.LayoutParams.WRAP_CONTENT));
-                    mLetters[i].setTextSize(TypedValue.COMPLEX_UNIT_SP,12);
+                    mLetters[i].setTextSize(TypedValue.COMPLEX_UNIT_SP,16);
                     mLetters[i].setText(word[i]+"");
-                    mLetters[i].getLayoutParams().width=140;
+                    mLetters[i].getLayoutParams().width=80;
                     mGridString.addView(mLetters[i]);
 
                 }
@@ -111,20 +119,10 @@ public class GameActivity extends AppCompatActivity {
 
 
     protected void guessLetter(char ch){
-        RequestQueue requestQueue= Volley.newRequestQueue(this);
-        String url ="http://hangman-api.herokuapp.com/hangman";
 
-        JSONObject jsonObject= new JSONObject();
-        try {
-            jsonObject.put("letter", ch);
-            jsonObject.put("token", token);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-
-
-        JsonObjectRequest jsonObjectRequest= new JsonObjectRequest(Request.Method.POST,url,jsonObject,new Response.Listener<JSONObject>() {
+        String url ="http://hangman-api.herokuapp.com/hangman?";
+        url += "token="+token+"&letter=" + ch;
+        JsonObjectRequest jsonObjectRequest= new JsonObjectRequest(Request.Method.PUT,url,null,new Response.Listener<JSONObject>() {
 
             @Override
             public void onResponse(JSONObject response) {
@@ -134,35 +132,36 @@ public class GameActivity extends AppCompatActivity {
                 try {
                     wrd= response.getString("hangman");
                     correct = response.getBoolean("correct");
+                    if(correct)
+                    {
+                        char temp [] = wrd.toCharArray();
+                        for(int i = 0; i < temp.length; i++)
+                            if(temp[i] !='_') {
+                                mLetters[i].setText(wrd.charAt(i) + "");
+                                word[i] = temp[i];
+                            }
+                        boolean finish = true;
+                        for(int i = 0; i < word.length; i++)
+                            if(word[i] == '_') {
+                                finish = false;
+                                break;
+                            }
+                        if(finish)
+                            won();
+                    }
+                    else
+                    {
+                        rem--;
+                        mRemaining.setText(rem+"");
+                        if(rem == -1)
+                            lose();
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
 
                 }
 
-                if(correct)
-                {
-                    char temp [] = wrd.toCharArray();
-                    for(int i = 0; i < temp.length; i++)
-                        if(temp[i] !='_') {
-                            mLetters[i].setText(wrd.charAt(i) + "");
-                            word[i] = temp[i];
-                        }
-                    boolean finish = true;
-                    for(int i = 0; i < word.length; i++)
-                        if(word[i] == '_') {
-                            finish = false;
-                            break;
-                        }
-                    if(finish)
-                        won();
-                }
-                else
-                {
-                    rem--;
-                    mRemaining.setText(rem+"");
-                    if(rem == -1)
-                        lose();
-                }
+
 
             }
         }, new Response.ErrorListener() {
@@ -172,6 +171,22 @@ public class GameActivity extends AppCompatActivity {
                 // TODO Auto-generated method stub
                 Toast.makeText(GameActivity.this,error.toString(),Toast.LENGTH_LONG);
 
+                NetworkResponse response = error.networkResponse;
+                if (error instanceof ServerError && response != null) {
+                    try {
+                        String res = new String(response.data,
+                                HttpHeaderParser.parseCharset(response.headers, "utf-8"));
+//                        System.out.println("res " +res);
+                        // Now you can use any deserializer to make sense of data
+                        JSONObject obj = new JSONObject(res);
+                    } catch (UnsupportedEncodingException e1) {
+                        // Couldn't properly decode data to string
+                        e1.printStackTrace();
+                    } catch (JSONException e2) {
+                        // returned data is not JSONObject?
+                        e2.printStackTrace();
+                    }
+                }
             }
         });
 
@@ -183,9 +198,10 @@ public class GameActivity extends AppCompatActivity {
         for(int i = 0; i < 26; i++){
             mButtons[i] = new Button(this);
             mButtons[i].setLayoutParams(new LinearLayout.LayoutParams(GridLayout.LayoutParams.WRAP_CONTENT, GridLayout.LayoutParams.WRAP_CONTENT));
-            mButtons[i].setTextSize(TypedValue.COMPLEX_UNIT_SP,12);
+            mButtons[i].setTextSize(TypedValue.COMPLEX_UNIT_SP,16);
             String ch = (char)('A'+i)+"";
             mButtons[i].setText(ch);
+
             mButtons[i].getLayoutParams().width=140;
             mGridLayout.addView(mButtons[i]);
             final int j = i;
@@ -194,6 +210,7 @@ public class GameActivity extends AppCompatActivity {
                 public void onClick(View v) {
                     guessLetter((char)(j+'a'));
                     mButtons[j].setClickable(false);
+                    mButtons[j].setVisibility(View.INVISIBLE);
                 }
             });
         }
