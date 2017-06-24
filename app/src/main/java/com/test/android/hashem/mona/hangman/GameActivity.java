@@ -1,5 +1,7 @@
 package com.test.android.hashem.mona.hangman;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -25,8 +27,9 @@ public class GameActivity extends AppCompatActivity {
     GridLayout mGridLayout, mGridString;
     char word [];
     String token;
-    Button mButtons[];
-    TextView mRemaining, mLetters[];
+    Button mButtons[] ,mPlayAgain;
+    TextView mRemaining,mGameStatus, mLetters[];
+    LinearLayout mEndGame;
     int rem = 10;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +38,17 @@ public class GameActivity extends AppCompatActivity {
         mGridLayout = (GridLayout) findViewById(R.id.grid_layout);
         mGridString = (GridLayout) findViewById(R.id.grid_string);
         mRemaining = (TextView) findViewById(R.id.tv_remaining);
+        mPlayAgain = (Button) findViewById(R.id.play_again);
+        mEndGame = (LinearLayout) findViewById(R.id.game_end_layout);
+        mGameStatus = (TextView) findViewById(R.id.tv_game_status);
         mRemaining.setText(rem+"");
         mButtons = new Button [26];
+        mPlayAgain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(GameActivity.this, GameActivity.class));
+            }
+        });
         setButtons();
         getWord();
     }
@@ -176,13 +188,32 @@ public class GameActivity extends AppCompatActivity {
             mButtons[i].setText(ch);
             mButtons[i].getLayoutParams().width=140;
             mGridLayout.addView(mButtons[i]);
-
+            final int j = i;
             mButtons[i].setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // make actions for clicking
+                    guessLetter((char)(j+'a'));
+                    mButtons[j].setClickable(false);
                 }
             });
         }
     }
+
+    protected void won(){
+
+        mEndGame.setVisibility(View.VISIBLE);
+        SharedPreferences sharedPreference = getSharedPreferences(getResources().getString(R.string.shared_preference),MODE_PRIVATE);
+
+        int score = sharedPreference.getInt(getResources().getString(R.string.score),0);
+        score += rem +1;
+        SharedPreferences.Editor editor = sharedPreference.edit();
+        editor.putInt(getResources().getString(R.string.score), score);
+        editor.commit();
+    }
+
+    protected void lose(){
+        mGameStatus.setText("Unfortunately you lost :(");
+        mEndGame.setVisibility(View.VISIBLE);
+    }
+
 }
