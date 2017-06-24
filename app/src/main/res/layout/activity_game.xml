@@ -21,8 +21,8 @@
         />
 
     <GridLayout
-
-        android:paddingTop="100dp"
+        android:id="@+id/grid_string"
+        android:paddingTop="50dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:rowCount="2"
@@ -35,6 +35,7 @@
 
     <GridLayout
         android:id="@+id/grid_layout"
+        android:paddingTop="50dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:rowCount="4"
